@@ -43,10 +43,14 @@ dockerNode {
     }
 
     stage('Deploy to ECS') {
-      docker.image('buildtools/ecs-deploy').inside {
-        def image = "923402097046.dkr.ecr.eu-central-1.amazonaws.com/capra-tv:$tagName"
-        sh "/ecs-deploy --aws-instance-profile -r eu-central-1 -c buildtools-stable -n capra-tv -i $image"
-      }
+      def image = "923402097046.dkr.ecr.eu-central-1.amazonaws.com/capra-tv:$tagName"
+      ecsDeploy("--aws-instance-profile -r eu-central-1 -c buildtools-stable -n capra-tv -i $image")
     }
+  }
+}
+
+def ecsDeploy(args) {
+  docker.image('buildtools/ecs-deploy').inside("-e AWS_CONTAINER_CREDENTIALS_RELATIVE_URI=${env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI}") {
+    sh "/ecs-deploy $args"
   }
 }
