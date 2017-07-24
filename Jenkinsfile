@@ -48,9 +48,3 @@ dockerNode {
     }
   }
 }
-
-def ecsDeploy(args) {
-  docker.image('buildtools/ecs-deploy').inside("-e AWS_CONTAINER_CREDENTIALS_RELATIVE_URI=${env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI}") {
-    sh "/ecs-deploy $args"
-  }
-}
