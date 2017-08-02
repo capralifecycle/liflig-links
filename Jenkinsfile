@@ -46,6 +46,7 @@ buildConfig([
       stage('Deploy to ECS') {
         def image = "$dockerImageName:$tagName"
         ecsDeploy("--aws-instance-profile -r eu-central-1 -c buildtools-stable -n capra-tv -i $image")
+        slackNotify message: 'Deployed new version of https://capra.tv'
       }
     }
   }
