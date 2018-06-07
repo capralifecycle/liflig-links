@@ -1,5 +1,7 @@
 # capra.tv
 
+[![Build Status](https://jenkins.capra.tv/buildStatus/icon?job=capra-tv/master)](https://jenkins.capra.tv/job/capra-tv/master)
+
 This repository contains the server and files serving https://capra.tv.
 The web page provides some quick links that can be used to access resources
 for CALS.
