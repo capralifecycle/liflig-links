@@ -8,3 +8,11 @@ for CALS.
 
 It's mostly set up to provide an example for a simple container and for
 deploying automatically to AWS.
+
+## Testing the build
+
+To test the build locally:
+
+```bash
+./test.sh
+```
