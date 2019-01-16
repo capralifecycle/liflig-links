@@ -1,4 +1,4 @@
-# capra.tv
+# [capra.tv](https://capra.tv)
 
 [![Build Status](https://jenkins.capra.tv/buildStatus/icon?job=capra-tv/master)](https://jenkins.capra.tv/job/capra-tv/job/master/)
 
