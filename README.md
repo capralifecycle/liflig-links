@@ -16,3 +16,10 @@ To test the build locally:
 ```bash
 ./test.sh
 ```
+## Running locally
+
+```bash
+docker-compose up --build web
+```
+
+http://localhost:8000
