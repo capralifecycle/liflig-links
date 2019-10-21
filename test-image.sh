@@ -56,7 +56,7 @@ echo "Took $((end-start)) seconds for service to boot up"
 
 content=$(docker run -i --rm --network $network_id byrnedo/alpine-curl -fsS nginx)
 
-if ! echo "$content" | grep -q "CALS"; then
+if ! echo "$content" | grep -q "Liflig"; then
   echo "Expected text not found in resource"
   echo "Received:"
   echo "$content"
