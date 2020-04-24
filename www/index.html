@@ -41,11 +41,45 @@
         color: #60C7E8;
         text-decoration: underline;
       }
+      input[type=text] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 5px;
+      }
     </style>
+    <script>
+      function searchOnSubmit() {
+        const cql = document.getElementById("cql");
+        const queryString = document.getElementById("queryString");
+        cql.value = 'siteSearch ~ \"' + encodeURIComponent(queryString.value) + '\" and ' + cql.value;
+        return true;
+      }
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("queryString").focus();
+      });
+    </script>
   </head>
   <body>
     <div class="box">
       <h1>Liflig</h1>
+      <form
+        method="get"
+        action="https://confluence.capraconsulting.no/dosearchsite.action"
+        onsubmit="searchOnSubmit()"
+      >
+        <input
+          type="hidden"
+          id="cql"
+          name="cql"
+          value="space in (CALS,TNG,SL,Kinnetik,Europris,NMD,CALSFM,FNF)"
+        >
+        <input
+          type="text"
+          id="queryString"
+          name="queryString"
+          placeholder="Søk i aktive Liflig-spaces"
+        >
+      </form>
       <p><a href="https://confluence.capraconsulting.no/x/MgBEB">Liflig admin</a></p>
       <p><a href="https://confluence.capraconsulting.no/x/9Y0fBg">Liflig knowledge management</a></p>
       <p><a href="https://confluence.capraconsulting.no/x/-QBEB">Meeting notes</a></p>
