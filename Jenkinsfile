@@ -68,6 +68,7 @@ buildConfig([
         lockName = "liflig-io-deploy"
         tag = tagName
         deployFunctionArn = "arn:aws:lambda:eu-west-1:001112238813:function:incub-liflig-io-ecs-update-image"
+        statusFunctionArn = "arn:aws:lambda:eu-west-1:001112238813:function:incub-liflig-io-ecs-status"
         roleArn = "arn:aws:iam::001112238813:role/incub-liflig-io-ecs-update-image"
       }
     }
