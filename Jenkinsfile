@@ -1,9 +1,25 @@
 #!/usr/bin/env groovy
 
 // See https://github.com/capralifecycle/jenkins-pipeline-library
-@Library("cals") _
+@Library("cals@hst") _
 
-def dockerImageName = "923402097046.dkr.ecr.eu-central-1.amazonaws.com/buildtools/service/capra-tv"
+import no.capraconsulting.buildtools.cdk.EcrPublish
+// import no.capraconsulting.buildtools.cdk.EcsUpdateImage
+
+def ecrPublish = new EcrPublish()
+def publishConfig = ecrPublish.config {
+  repositoryUri = "001112238813.dkr.ecr.eu-west-1.amazonaws.com/incub-common-builds"
+  applicationName = "liflig-io"
+  roleArn = "arn:aws:iam::001112238813:role/incub-common-build-artifacts-ci"
+}
+
+/*
+def ecsUpdateImage = new EcsUpdateImage()
+def deployConfig = ecsUpdateImage.config {
+  deployRoleArn = "arn:aws:iam::001112238813:role/incub-liflig-io-ecs-update-image"
+  deployFunctionArn = "arn:aws:lambda:eu-west-1:001112238813:function:incub-liflig-io-ecs-update-image"
+}
+*/
 
 buildConfig([
   jobProperties: [
@@ -18,41 +34,38 @@ buildConfig([
   ],
 ]) {
   dockerNode {
-    stage("Checkout source") {
-      checkout scm
-    }
+    def tagName
 
-    def img
-    def lastImageId = dockerPullCacheImage(dockerImageName)
-
-    stage("Build Docker image") {
-      img = docker.build(dockerImageName, "--cache-from $lastImageId --pull .")
-    }
-
-    stage("Test build") {
-      docker.image("docker").inside {
-        sh "./test-image.sh ${img.id}"
-      }
-    }
-
-    def isSameImage = dockerPushCacheImage(img, lastImageId)
-
-    if (env.BRANCH_NAME == "master" && !isSameImage) {
-      def tagName = sh([
-        returnStdout: true,
-        script: "date +%Y%m%d-%H%M"
-      ]).trim() + "-" + env.BUILD_NUMBER
-
-      stage("Push Docker image") {
-        img.push(tagName)
-        img.push("latest")
+    ecrPublish.withEcrLogin(publishConfig) {
+      stage("Checkout source") {
+        checkout scm
       }
 
-      stage("Deploy to ECS") {
-        def image = "$dockerImageName:$tagName"
-        ecsDeploy("--aws-instance-profile -r eu-central-1 -c buildtools-stable -n capra-tv -i $image")
-        slackNotify message: "Deployed new version of https://capra.tv"
+      def img
+      def lastImageId = ecrPublish.pullCache(publishConfig)
+
+      stage("Build Docker image") {
+        img = docker.build(dockerImageName, "--cache-from $lastImageId --pull .")
+      }
+
+      stage("Test build") {
+        docker.image("docker").inside {
+          sh "./test-image.sh ${img.id}"
+        }
+      }
+
+      def isSameImage = ecrPublish.pushCache(publishConfig, img, lastImageId)
+      if (!isSameImage) {
+        tagName = ecrPublish.generateLongTag(publishConfig)
+        stage("Push Docker image") {
+          img.push(tagName)
+        }
       }
     }
+  }
+
+  if (env.BRANCH_NAME == "master" && tagName) {
+    echo "TODO: Deploy new image"
+    // slackNotify message: "Deployed new version of https://capra.tv"
   }
 }
