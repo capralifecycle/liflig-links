@@ -16,6 +16,15 @@ def publishConfig = ecrPublish.config {
 }
 
 buildConfig([
+  jobProperties: [
+    parameters([
+      booleanParam(
+        defaultValue: false,
+        description: 'Force deploy even when having cache',
+        name: 'forceDeploy'
+      ),
+    ]),
+  ],
   slack: [
     channel: "#cals-dev-info",
     teamDomain: "cals-capra",
@@ -43,7 +52,7 @@ buildConfig([
       }
 
       def isSameImage = ecrPublish.pushCache(publishConfig, img, lastImageId)
-      if (!isSameImage) {
+      if (!isSameImage || params.forceDeploy) {
         tagName = ecrPublish.generateLongTag(publishConfig)
         stage("Push Docker image") {
           img.push(tagName)
