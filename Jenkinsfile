@@ -23,6 +23,11 @@ buildConfig([
         description: 'Force deploy even when having cache',
         name: 'forceDeploy'
       ),
+      booleanParam(
+        defaultValue: false,
+        description: 'Allow this build to override branch check and deploy',
+        name: 'overrideBranchCheck'
+      ),
     ]),
   ],
   slack: [
@@ -61,7 +66,8 @@ buildConfig([
     }
   }
 
-  if (env.BRANCH_NAME == "master" && tagName) {
+  def allowDeploy = env.BRANCH_NAME == "master" || params.overrideBranchCheck
+  if (allowDeploy && tagName) {
     echo "Deploying new image"
 
     stage("Deploy") {
