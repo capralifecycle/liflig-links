@@ -16,12 +16,6 @@ def publishConfig = ecrPublish.config {
 }
 
 buildConfig([
-  jobProperties: [
-    pipelineTriggers([
-      // Build a new version every night so we keep up to date with upstream changes
-      cron("H H(2-6) * * *"),
-    ]),
-  ],
   slack: [
     channel: "#cals-dev-info",
     teamDomain: "cals-capra",
