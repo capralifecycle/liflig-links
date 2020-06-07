@@ -28,11 +28,7 @@ buildConfig([
         description: 'Allow this build to override branch check and deploy',
         name: 'overrideBranchCheck'
       ),
-      booleanParam(
-        defaultValue: false,
-        description: "Force build without Docker cache",
-        name: "dockerSkipCache"
-      ),
+      ecrPublish.dockerSkipCacheParam(),
     ]),
   ],
   slack: [
@@ -48,16 +44,7 @@ buildConfig([
         checkout scm
       }
 
-      def img
-      def lastImageId = ecrPublish.pullCache(publishConfig)
-
-      stage("Build Docker image") {
-        def args = ""
-        if (params.dockerSkipCache) {
-          args = " --no-cache"
-        }
-        img = docker.build(publishConfig.repositoryUri, "--cache-from $lastImageId$args --pull .")
-      }
+      def (img, isSameImageAsLast) = ecrPublish.buildImage(publishConfig)
 
       stage("Test build") {
         docker.image("docker").inside {
@@ -65,8 +52,7 @@ buildConfig([
         }
       }
 
-      def isSameImage = ecrPublish.pushCache(publishConfig, img, lastImageId)
-      if (!isSameImage || params.forceDeploy) {
+      if (!isSameImageAsLast || params.forceDeploy) {
         tagName = ecrPublish.generateLongTag(publishConfig)
         stage("Push Docker image") {
           img.push(tagName)
