@@ -68,8 +68,6 @@ buildConfig([
 
   def allowDeploy = env.BRANCH_NAME == "master" || params.overrideBranchCheck
   if (allowDeploy && tagName) {
-    echo "Deploying new image"
-
     stage("Deploy") {
       ecsUpdateImage.deploy {
         milestone1 = 1
