@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eu
 
-docker build -t capra-tv-test .
+docker build -t liflig-links .
 
-./test-image.sh capra-tv-test
+./test-image.sh liflig-links
