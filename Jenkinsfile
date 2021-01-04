@@ -12,7 +12,7 @@ def ecsUpdateImage = new EcsUpdateImage()
 def publishConfig = ecrPublish.config {
   repositoryUri = "001112238813.dkr.ecr.eu-west-1.amazonaws.com/incub-common-builds"
   applicationName = "liflig-io"
-  roleArn = "arn:aws:iam::001112238813:role/incub-common-build-artifacts-ci"
+  roleArn = "arn:aws:iam::001112238813:role/incub-common-build-artifacts-liflig-jenkins"
 }
 
 buildConfig([
