@@ -1,7 +1,5 @@
 # liflig-links
 
-[![Build Status](https://jenkins.capra.tv/buildStatus/icon?job=liflig-internal/liflig-links/master)](https://jenkins.capra.tv/job/liflig-internal/job/liflig-links/job/master/)
-
 This repository contains the server and files serving https://liflig.io.
 The web page provides some quick links that can be used to access resources
 for Liflig.
