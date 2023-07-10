@@ -49,12 +49,6 @@
       }
     </style>
     <script>
-      function searchOnSubmit() {
-        const cql = document.getElementById("cql");
-        const queryString = document.getElementById("queryString");
-        cql.value = 'siteSearch ~ \"' + encodeURIComponent(queryString.value) + '\" and ' + cql.value;
-        return true;
-      }
       document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("queryString").focus();
       });
@@ -65,20 +59,13 @@
       <h1>Liflig</h1>
       <form
         method="get"
-        action="https://confluence.capraconsulting.no/dosearchsite.action"
-        onsubmit="searchOnSubmit()"
+        action="https://liflig.atlassian.net/wiki/search?text="
       >
-        <input
-          type="hidden"
-          id="cql"
-          name="cql"
-          value="space in (CALS,TNG,SL,Europris,NMD,FNF,LC,TOM,RIS)"
-        >
         <input
           type="text"
           id="queryString"
-          name="queryString"
-          placeholder="Søk i aktive Liflig-spaces"
+          name="text"
+          placeholder="Søk i Liflig Confluence"
         >
       </form>
       <p><a href="https://liflig.atlassian.net/l/cp/DzfPfxMB">The Liflig Way</a></p>
