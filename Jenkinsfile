@@ -4,15 +4,16 @@
 @Library("cals") _
 
 import no.capraconsulting.buildtools.cdk.EcrPublish
-import no.capraconsulting.buildtools.cdk.EcsUpdateImage
 
 def ecrPublish = new EcrPublish()
-def ecsUpdateImage = new EcsUpdateImage()
+
+def buildArtifactsBucketName = "incub-common-build-artifacts-001112238813-eu-west-1"
+def buildArtifactsRoleArn = "arn:aws:iam::001112238813:role/incub-common-build-artifacts-liflig-jenkins"
 
 def publishConfig = ecrPublish.config {
   repositoryUri = "001112238813.dkr.ecr.eu-west-1.amazonaws.com/incub-common-builds"
   applicationName = "liflig-io"
-  roleArn = "arn:aws:iam::001112238813:role/incub-common-build-artifacts-liflig-jenkins"
+  roleArn = buildArtifactsRoleArn
 }
 
 buildConfig([
@@ -63,16 +64,18 @@ buildConfig([
 
   def allowDeploy = env.BRANCH_NAME == "master" || params.overrideBranchCheck
   if (allowDeploy && tagName) {
-    stage("Deploy") {
-      ecsUpdateImage.deploy {
-        milestone1 = 1
-        milestone2 = 2
-        lockName = "liflig-io-deploy"
-        tag = tagName
-        deployFunctionArn = "arn:aws:lambda:eu-west-1:001112238813:function:incub-liflig-io-ecs-update-image"
-        statusFunctionArn = "arn:aws:lambda:eu-west-1:001112238813:function:incub-liflig-io-ecs-status"
-        roleArn = "arn:aws:iam::001112238813:role/incub-liflig-io-ecs-update-image"
-      }
+    stage("Trigger deploy pipeline") {
+        pipelines.configureVariablesAndTrigger(
+          artifactsRoleArn: buildArtifactsRoleArn,
+          artifactsBucketName: buildArtifactsBucketName,
+          pipelineName: "incub-common",
+          variables: [
+            "lifligIoEcrTag": tagName,
+          ],
+          variablesNamespace: "incub-liflig-io",
+          variablesVersion: "v2",
+          region: "eu-west-1",
+        )
     }
 
     slackNotify message: "Deployed new version of https://liflig.io ($tagName)"
