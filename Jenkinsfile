@@ -77,7 +77,5 @@ buildConfig([
           region: "eu-west-1",
         )
     }
-
-    slackNotify message: "Deployed new version of https://liflig.io ($tagName)"
   }
 }
