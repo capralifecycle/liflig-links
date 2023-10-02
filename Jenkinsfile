@@ -5,6 +5,7 @@
 
 import no.capraconsulting.buildtools.cdk.EcrPublish
 
+def pipelines = new no.capraconsulting.buildtools.lifligcdkpipelines.LifligCdkPipelines()
 def ecrPublish = new EcrPublish()
 
 def buildArtifactsBucketName = "incub-common-build-artifacts-001112238813-eu-west-1"
@@ -60,11 +61,10 @@ buildConfig([
         }
       }
     }
-  }
 
-  def allowDeploy = env.BRANCH_NAME == "master" || params.overrideBranchCheck
-  if (allowDeploy && tagName) {
-    stage("Trigger deploy pipeline") {
+    def allowDeploy = env.BRANCH_NAME == "master" || params.overrideBranchCheck
+    if (allowDeploy && tagName) {
+      stage("Trigger deploy pipeline") {
         pipelines.configureVariablesAndTrigger(
           artifactsRoleArn: buildArtifactsRoleArn,
           artifactsBucketName: buildArtifactsBucketName,
@@ -76,6 +76,7 @@ buildConfig([
           variablesVersion: "v2",
           region: "eu-west-1",
         )
+      }
     }
   }
 }
