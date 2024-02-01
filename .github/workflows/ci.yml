@@ -28,14 +28,14 @@ jobs:
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
-      - uses: capralifecycle/actions-lib/check-runtime-dependencies@v1
+      - uses: capralifecycle/actions-lib/check-runtime-dependencies@72f450a706d380212723f38753a82d8bb40ea5fc # v1
 
-      - uses: capralifecycle/actions-lib/parse-config@v1
+      - uses: capralifecycle/actions-lib/parse-config@72f450a706d380212723f38753a82d8bb40ea5fc # v1
         id: config
         with:
           config-file: ".ldp.json"
 
-      - uses: capralifecycle/actions-lib/configure-aws-credentials@v1
+      - uses: capralifecycle/actions-lib/configure-aws-credentials@72f450a706d380212723f38753a82d8bb40ea5fc # v1
         id: aws
         with:
           aws-account-id: ${{ steps.config.outputs.accountId }}
@@ -43,7 +43,7 @@ jobs:
           aws-iam-role-name: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && steps.config.outputs.roleName || steps.config.outputs.limitedRoleName }}
           authenticate-to-ecr: true
 
-      - uses: capralifecycle/actions-lib/generate-tag@v1
+      - uses: capralifecycle/actions-lib/generate-tag@72f450a706d380212723f38753a82d8bb40ea5fc # v1
         id: tag
         with:
           tag-prefix: "${{ env.APPLICATION_NAME }}"
@@ -70,7 +70,7 @@ jobs:
           fi
 
       - name: trigger production deployment pipelines
-        uses: capralifecycle/actions-lib/trigger-deployment-pipeline@v1
+        uses: capralifecycle/actions-lib/trigger-deployment-pipeline@72f450a706d380212723f38753a82d8bb40ea5fc # v1
         if: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
         env:
           AWS_ACCESS_KEY_ID: ${{ steps.aws.outputs.aws-access-key-id }}
@@ -82,7 +82,7 @@ jobs:
           trigger-type: "artifact"
           artifact-parameters: "lifligIoEcrTag=${{ steps.tag.outputs.tag }}"
 
-      - uses: capralifecycle/actions-lib/slack-notify@v1
+      - uses: capralifecycle/actions-lib/slack-notify@72f450a706d380212723f38753a82d8bb40ea5fc # v1
         # NOTE: We only want to be notified about failures on the default branch
         if: ${{ failure() && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
         with:
