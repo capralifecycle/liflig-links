@@ -1,0 +1,90 @@
+name: liflig-links
+on:
+  push:
+    branches:
+      - "**"
+
+env:
+  APPLICATION_NAME: "liflig-io"
+
+defaults:
+  run:
+    # NOTE: A bit stricter than the default bash options used by GitHub Actions
+    # (bash --noprofile --norc -e -o pipefail {0})
+    shell: bash --noprofile --norc -euo pipefail {0}
+
+# NOTE: Set concurrency for the current workflow to 1
+concurrency: ci-${{ github.ref }}-${{ github.workflow }}
+
+jobs:
+  build-and-deploy:
+    timeout-minutes: 60
+    runs-on: ubuntu-22.04
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: capralifecycle/actions-lib/check-runtime-dependencies@v1
+
+      - uses: capralifecycle/actions-lib/parse-config@v1
+        id: config
+        with:
+          config-file: ".ldp.json"
+
+      - uses: capralifecycle/actions-lib/configure-aws-credentials@v1
+        id: aws
+        with:
+          aws-account-id: ${{ steps.config.outputs.accountId }}
+          # NOTE: We use different roles on default and non-default branches
+          aws-iam-role-name: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && steps.config.outputs.roleName || steps.config.outputs.limitedRoleName }}
+          authenticate-to-ecr: true
+
+      - uses: capralifecycle/actions-lib/generate-tag@v1
+        id: tag
+        with:
+          tag-prefix: "${{ env.APPLICATION_NAME }}"
+
+      - name: build image
+        id: build_image
+        run: echo "containerImageId=$(docker build -q .)" >> $GITHUB_OUTPUT
+
+      - name: test image
+        run: ./test-image.sh "$CONTAINER_IMAGE_ID"
+        env:
+          CONTAINER_IMAGE_ID: "${{ steps.build_image.outputs.containerImageId }}"
+
+      - name: conditionally push docker image
+        env:
+          ECR_REPOSITORY_URI: "${{ steps.config.outputs.accountId }}.dkr.ecr.eu-west-1.amazonaws.com/${{ steps.config.outputs.ecrRepository }}"
+          DEFAULT_TAG: "${{ steps.tag.outputs.tag }}"
+          CONTAINER_IMAGE_ID: "${{ steps.build_image.outputs.containerImageId }}"
+          CONDITIONAL_PUSH: "${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}"
+        run: |
+          if [ "$CONDITIONAL_PUSH" = "true" ]; then
+            docker tag "$CONTAINER_IMAGE_ID" "$ECR_REPOSITORY_URI:$DEFAULT_TAG"
+            docker push "$ECR_REPOSITORY_URI:$DEFAULT_TAG"
+          fi
+
+      - name: trigger production deployment pipelines
+        uses: capralifecycle/actions-lib/trigger-deployment-pipeline@v1
+        if: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ steps.aws.outputs.aws-access-key-id }}
+          AWS_SECRET_ACCESS_KEY: ${{ steps.aws.outputs.aws-secret-access-key }}
+          AWS_SESSION_TOKEN: ${{ steps.aws.outputs.aws-session-token }}
+        with:
+          pipelines: ${{ steps.config.outputs.prodPipelines }}
+          aws-s3-bucket-name: ${{ steps.config.outputs.artifactBucket }}
+          trigger-type: "artifact"
+          artifact-parameters: "lifligIoEcrTag=${{ steps.tag.outputs.tag }}"
+
+      - uses: capralifecycle/actions-lib/slack-notify@v1
+        # NOTE: We only want to be notified about failures on the default branch
+        if: ${{ failure() && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+        with:
+          bot-token: ${{ secrets.SHARED_SLACK_BOT_TOKEN }}
+          channel: "#cals-dev-info"
