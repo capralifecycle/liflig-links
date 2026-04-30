@@ -13,13 +13,13 @@ only put on S3.
 To test the build locally:
 
 ```bash
-./test.sh
+make
 ```
 
 ## Running locally
 
 ```bash
-docker-compose up --build web
+make run
 ```
 
 http://localhost:8000

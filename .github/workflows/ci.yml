@@ -6,6 +6,7 @@ on:
 
 env:
   APPLICATION_NAME: "liflig-io"
+  IMAGE_NAME: "liflig-links"
 
 defaults:
   run:
@@ -48,24 +49,17 @@ jobs:
         with:
           tag-prefix: "${{ env.APPLICATION_NAME }}"
 
-      - name: build image
-        id: build_image
-        run: echo "containerImageId=$(docker build -q .)" >> $GITHUB_OUTPUT
-
-      - name: test image
-        run: ./test-image.sh "$CONTAINER_IMAGE_ID"
-        env:
-          CONTAINER_IMAGE_ID: "${{ steps.build_image.outputs.containerImageId }}"
+      - name: build and test image
+        run: make
 
       - name: conditionally push docker image
         env:
           ECR_REPOSITORY_URI: "${{ steps.config.outputs.accountId }}.dkr.ecr.eu-west-1.amazonaws.com/${{ steps.config.outputs.ecrRepository }}"
           DEFAULT_TAG: "${{ steps.tag.outputs.tag }}"
-          CONTAINER_IMAGE_ID: "${{ steps.build_image.outputs.containerImageId }}"
           CONDITIONAL_PUSH: "${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}"
         run: |
           if [ "$CONDITIONAL_PUSH" = "true" ]; then
-            docker tag "$CONTAINER_IMAGE_ID" "$ECR_REPOSITORY_URI:$DEFAULT_TAG"
+            docker tag "$IMAGE_NAME" "$ECR_REPOSITORY_URI:$DEFAULT_TAG"
             docker push "$ECR_REPOSITORY_URI:$DEFAULT_TAG"
           fi
 

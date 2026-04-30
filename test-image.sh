@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-if [ -z "$1" ]; then
+if [ $# -eq 0 ]; then
   echo "Syntax: $0 <image-id>"
   exit 1
 fi
@@ -12,55 +12,63 @@ container_logs() {
 
 image_id="$1"
 
-# Use unix time to simulate a random value, /dev/urandom might be unstable
-run_id=$(date +%s | base64 | tr -dc 'a-zA-Z0-9' | fold -w 16)
+echo "==> Testing image: $image_id"
+
+# Random suffix so parallel runs don't collide on docker network/container names.
+run_id=$(head -c 12 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c 16)
 network_name="build-test-$run_id"
-echo "Docker network name: $network_name"
+container_name="build-run-$run_id"
+
+echo "==> Creating docker network: $network_name"
 network_id=$(docker network create $network_name)
 
-# Avoid running in daemon mode so that we can get the logs more easily.
-container_name="build-run-$run_id"
-(docker run --rm --network-alias=nginx --network $network_id --name $container_name "$image_id" | container_logs) &
-
-cleanup() {
-  echo "Cleaning up resources"
+finish() {
+  rc=$?
+  echo "==> Cleaning up"
   docker stop $container_name || :
   docker network rm $network_name || :
+  if [ "$rc" -eq 0 ]; then
+    echo "==> PASS: image responds and content matches"
+  else
+    echo "==> FAIL: test exited with status $rc"
+  fi
 }
+trap finish EXIT
 
-trap cleanup EXIT
+# Avoid running in daemon mode so that we can get the logs more easily.
+echo "==> Starting container: $container_name"
+(docker run --rm --network-alias=nginx --network $network_id --name $container_name "$image_id" | container_logs) &
 
 max_wait=10
 wait_interval=2
-echo "Polling for service to be up.. Trying for $max_wait iterations of $wait_interval sec"
+echo "==> Waiting for nginx to respond (up to $((max_wait * wait_interval))s)"
 
 ok=0
 start=$(date +%s)
 for x in $(seq 1 $max_wait); do
-  if docker run -i --rm --network $network_id byrnedo/alpine-curl -fsS nginx >/dev/null; then
+  if docker run -i --rm --network $network_id byrnedo/alpine-curl -fsS nginx >/dev/null 2>&1; then
     ok=1
     break
   fi
+  printf '.'
   sleep $wait_interval
 done
+echo
 
 if [ $ok -eq 0 ]; then
-  echo "Waiting for service to boot failed"
+  echo "FAIL: service did not respond within $((max_wait * wait_interval))s"
   exit 1
 fi
 
 end=$(date +%s)
-echo "Took $((end-start)) seconds for service to boot up"
+echo "==> nginx ready after $((end-start))s"
 
 # Verify we get expected content
-
+echo "==> Checking response body for 'Liflig'"
 content=$(docker run -i --rm --network $network_id byrnedo/alpine-curl -fsS nginx)
 
 if ! echo "$content" | grep -q "Liflig"; then
-  echo "Expected text not found in resource"
-  echo "Received:"
+  echo "FAIL: expected 'Liflig' in response body, got:"
   echo "$content"
   exit 1
-else
-  echo "Everything seems fine!"
 fi
