@@ -37,7 +37,8 @@ trap finish EXIT
 
 # Avoid running in daemon mode so that we can get the logs more easily.
 echo "==> Starting container: $container_name"
-(docker run --rm --network-alias=nginx --network $network_id --name $container_name "$image_id" | container_logs) &
+# Matches how the task runs in ECS: read-only root, /tmp the only writable mount.
+(docker run --rm --read-only --tmpfs /tmp --network-alias=nginx --network $network_id --name $container_name "$image_id" | container_logs) &
 
 max_wait=10
 wait_interval=2
@@ -46,7 +47,7 @@ echo "==> Waiting for nginx to respond (up to $((max_wait * wait_interval))s)"
 ok=0
 start=$(date +%s)
 for x in $(seq 1 $max_wait); do
-  if docker run -i --rm --network $network_id byrnedo/alpine-curl -fsS nginx >/dev/null 2>&1; then
+  if docker run -i --rm --network $network_id byrnedo/alpine-curl -fsS nginx:8080 >/dev/null 2>&1; then
     ok=1
     break
   fi
@@ -65,7 +66,7 @@ echo "==> nginx ready after $((end-start))s"
 
 # Verify we get expected content
 echo "==> Checking response body for 'Liflig'"
-content=$(docker run -i --rm --network $network_id byrnedo/alpine-curl -fsS nginx)
+content=$(docker run -i --rm --network $network_id byrnedo/alpine-curl -fsS nginx:8080)
 
 if ! echo "$content" | grep -q "Liflig"; then
   echo "FAIL: expected 'Liflig' in response body, got:"
