@@ -37,8 +37,7 @@ trap finish EXIT
 
 # Avoid running in daemon mode so that we can get the logs more easily.
 echo "==> Starting container: $container_name"
-# Matches how the task runs in ECS: read-only root, /tmp the only writable mount.
-(docker run --rm --read-only --tmpfs /tmp --network-alias=nginx --network $network_id --name $container_name "$image_id" | container_logs) &
+(docker run --rm --network-alias=nginx --network $network_id --name $container_name "$image_id" | container_logs) &
 
 max_wait=10
 wait_interval=2
