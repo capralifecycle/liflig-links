@@ -1,5 +1,5 @@
 IMAGE_NAME ?= liflig-links
-PORT ?= 8000
+PORT ?= 8080
 
 .PHONY: all
 all: build test
@@ -15,7 +15,7 @@ test:
 .PHONY: run
 run: build
 	@echo "Serving at http://localhost:$(PORT)"
-	docker run --rm -p 127.0.0.1:$(PORT):80 -v $(CURDIR)/www:/usr/share/nginx/html $(IMAGE_NAME)
+	docker run --rm -p 127.0.0.1:$(PORT):8080 -v $(CURDIR)/www:/usr/share/nginx/html $(IMAGE_NAME)
 
 .PHONY: clean
 clean:
